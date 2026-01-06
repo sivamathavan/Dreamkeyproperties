@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | DreamKey Console</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .admin-sidebar {
+            width: 280px;
+            background: var(--primary);
+            height: 100vh;
+            position: fixed;
+            color: white;
+            padding: 2rem;
+        }
+
+        .admin-sidebar .logo {
+            font-size: 1.15rem;
+            gap: 8px;
+            flex-wrap: wrap;
+            /* Prevent word overflow */
+        }
+
+        .admin-main {
+            margin-left: 280px;
+            padding: 4rem;
+            background: var(--bg-light);
+            min-height: 100vh;
+        }
+
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--primary);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: white;
+            padding: 4rem;
+            border-radius: 30px;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+        }
+
+        .property-row {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--warm-gray);
+        }
+
+        .admin-nav-item {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .admin-nav-item.active {
+            background: var(--accent);
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.8);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 30px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 4rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 10px;
+            border: 1px solid var(--warm-gray);
+            font-family: inherit;
+        }
+
+        @media (max-width: 1024px) {
+            .admin-sidebar {
+                left: -280px;
+                z-index: 2500;
+                /* Higher than header */
+                transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .admin-sidebar.active {
+                left: 0;
+                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.4);
+            }
+
+            .admin-main {
+                margin-left: 0;
+                padding: 1.5rem;
+            }
+
+            .mobile-header {
+                display: flex !important;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 2rem;
+                background: var(--primary);
+                /* Use brand color */
+                padding: 1.2rem 1.5rem;
+                border-radius: 20px;
+                box-shadow: var(--shadow);
+                color: white;
+                /* Contrast text */
+            }
+
+            .sidebar-toggle {
+                background: var(--accent);
+                color: var(--primary);
+                width: 45px;
+                height: 45px;
+                border: none;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                font-size: 1.2rem;
+            }
+        }
+
+        .mobile-header {
+            display: none;
+        }
+
+        @media (max-width: 640px) {
+            .property-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1.5rem;
+            }
+
+            .property-row>div:last-child {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                padding: 2rem;
+            }
+
+            .login-card {
+                padding: 2.5rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-card">
+            <i class="fas fa-shield-alt" style="font-size: 3rem; color: var(--accent); margin-bottom: 2rem;"></i>
+            <h2 style="margin-bottom: 1rem;">Admin Access</h2>
+            <p style="color: var(--text-gray); margin-bottom: 2.5rem;">Secure entrance for DreamKey authorized personnel
+                only.</p>
+            <form id="login-form">
+                <input type="email" id="admin-email" placeholder="Email Address" required
+                    style="width: 100%; padding: 1.2rem; border-radius: 15px; border: 1px solid var(--warm-gray); margin-bottom: 1rem; text-align: center; font-size: 1.1rem;">
+                <input type="password" id="admin-pass" placeholder="Password" required
+                    style="width: 100%; padding: 1.2rem; border-radius: 15px; border: 1px solid var(--warm-gray); margin-bottom: 1.5rem; text-align: center; font-size: 1.1rem;">
+                <button type="submit" id="login-btn" class="btn btn-primary" style="width: 100%;">Sign In</button>
+            </form>
+            <p id="error-msg" style="color: #ef4444; margin-top: 1rem; display: none; font-weight: 600;"></p>
+        </div>
+    </div>
+
+    <div class="admin-sidebar">
+        <div class="logo" style="margin-bottom: 4rem;"><img src="assets/logo-1.png"
+                alt="Logo">DreamKey<span>Admin</span></div>
+        <div class="admin-nav-item active"><i class="fas fa-th-list"></i> Listings</div>
+        <div class="admin-nav-item" onclick="window.location.href='index.html'"><i class="fas fa-external-link-alt"></i>
+            Public Site</div>
+        <div class="admin-nav-item" onclick="adminSignOut()" style="margin-top: auto; color: #ef4444;"><i
+                class="fas fa-sign-out-alt"></i> Sign Out</div>
+    </div>
+
+    <div class="admin-main">
+        <div class="mobile-header">
+            <div class="logo"><img src="assets/logo-1.png" alt="Logo" style="height: 30px;">DreamKey</div>
+            <button onclick="toggleSidebar()"
+                style="background: var(--primary); color: white; border: none; padding: 0.8rem; border-radius: 12px; cursor: pointer;">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; flex-wrap: wrap; gap: 1.5rem;">
+            <div>
+                <h1 style="font-size: 2.5rem;">Property Inventory</h1>
+                <p style="color: var(--text-gray);">Manage your real estate catalog in real-time.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openModal()">+ Add New Property</button>
+        </div>
+
+        <div id="admin-list">
+            <!-- Properties display here -->
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="property-modal" class="modal">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;">
+                <h2 id="modal-title">Add Property</h2>
+                <button onclick="closeModal()"
+                    style="background: none; border: none; font-size: 2rem; cursor: pointer;">&times;</button>
+            </div>
+            <form id="property-form">
+                <input type="hidden" id="prop-id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" id="prop-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" id="prop-location" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="prop-type">
+                            <option>House</option>
+                            <option>Flat</option>
+                            <option>Land</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="prop-status">
+                            <option>Available</option>
+                            <option>Sold</option>
+                            <option>UnderConstruction</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Price (₹)</label>
+                        <input type="number" id="prop-price" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Area (sqft)</label>
+                        <input type="number" id="prop-area" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Bedrooms</label>
+                        <input type="number" id="prop-bedrooms" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Bathrooms</label>
+                        <input type="number" id="prop-bathrooms" value="0">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Amenities (Comma separated)</label>
+                        <input type="text" id="prop-amenities" placeholder="Pool, Gym, Parking">
+                    </div>
+                </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Description</label>
+                    <textarea id="prop-desc" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Upload Images (PC/Mobile)</label>
+                    <input type="file" id="prop-images-file" accept="image/*" multiple style="padding: 0.5rem 0;">
+                    <div id="image-preview" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Upload Video (PC/Mobile)</label>
+                    <input type="file" id="prop-video-file" accept="video/*" style="padding: 0.5rem 0;">
+                    <div id="video-preview" style="margin-top: 1rem;"></div>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 2rem; grid-column: span 2;">
+                    <button type="button" class="btn" style="background: var(--warm-gray); flex: 1;"
+                        onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 2;">Save Property</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        // Secure Session Management
+        async function checkSession() {
+            const user = await getAdminUser();
+            if (user) {
+                document.getElementById('login-overlay').style.display = 'none';
+                renderAdminList();
+            } else {
+                document.getElementById('login-overlay').style.display = 'flex';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', checkSession);
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('admin-email').value;
+            const pass = document.getElementById('admin-pass').value;
+            const btn = document.getElementById('login-btn');
+            const error = document.getElementById('error-msg');
+
+            btn.innerText = 'Verifying...';
+            btn.disabled = true;
+            error.style.display = 'none';
+
+            const { data, error: authError } = await adminSignIn(email, pass);
+
+            if (authError) {
+                error.innerText = authError.message;
+                error.style.display = 'block';
+                btn.innerText = 'Sign In';
+                btn.disabled = false;
+            } else {
+                checkSession();
+            }
+        });
+
+        async function renderAdminList() {
+            const list = document.getElementById('admin-list');
+            const data = await fetchProperties();
+
+            if (!data || data.length === 0) {
+                list.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-gray);">No properties found.</div>';
+                return;
+            }
+
+            const rows = [];
+            for (const p of data) {
+                const thumb = (p.images && p.images[0]) || 'https://via.placeholder.com/600x400';
+                rows.push(`
+                    <div class="property-row">
+                        <div style="display: flex; align-items: center; gap: 1.5rem; flex: 1;">
+                            <div style="position: relative; width: 80px; height: 60px; flex-shrink: 0; background: #eee; border-radius: 12px; overflow: hidden;">
+                                <img src="${thumb}" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                            <div style="min-width: 0;">
+                                <div style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.title}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-gray);">${p.location} | ${formatPrice(p.price)}</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.8rem; flex-shrink: 0;">
+                            <button class="btn" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; background: var(--warm-gray); border-radius: 12px;" onclick="editProp('${p.id}')"><i class="fas fa-edit"></i> Edit</button>
+                            <button class="btn" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; background: #fee2e2; color: #ef4444; border-radius: 12px;" onclick="handleDelete('${p.id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `);
+            }
+            list.innerHTML = rows.join('');
+        }
+
+        async function handleDelete(id) {
+            if (confirm('Are you sure you want to delete this property?')) {
+                try {
+                    await removeProperty(id);
+                    await renderAdminList();
+                } catch (err) {
+                    alert('Delete failed: ' + err.message);
+                }
+            }
+        }
+
+        const modal = document.getElementById('property-modal');
+        function openModal() {
+            document.getElementById('property-form').reset();
+            document.getElementById('prop-id').value = '';
+            document.getElementById('prop-bedrooms').value = '0';
+            document.getElementById('prop-bathrooms').value = '0';
+            document.getElementById('prop-amenities').value = '';
+            document.getElementById('image-preview').innerHTML = '';
+            document.getElementById('video-preview').innerHTML = '';
+            document.getElementById('modal-title').innerText = 'Add Property';
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        async function editProp(id) {
+            const properties = await fetchProperties();
+            const p = properties.find(item => item.id === id);
+            if (!p) return;
+
+            document.getElementById('prop-id').value = p.id;
+            document.getElementById('prop-title').value = p.title;
+            document.getElementById('prop-location').value = p.location;
+            document.getElementById('prop-type').value = p.type;
+            document.getElementById('prop-status').value = p.status;
+            document.getElementById('prop-price').value = p.price;
+            document.getElementById('prop-area').value = p.area;
+            document.getElementById('prop-bedrooms').value = p.bedrooms || 0;
+            document.getElementById('prop-bathrooms').value = p.bathrooms || 0;
+            document.getElementById('prop-amenities').value = (p.amenities || []).join(', ');
+            document.getElementById('prop-desc').value = p.description;
+
+            const preview = document.getElementById('image-preview');
+            preview.innerHTML = '';
+            for (const img of p.images) {
+                preview.innerHTML += `
+                    <div style="position: relative; width: 80px; height: 80px; border-radius: 12px; overflow: hidden; border: 2px solid var(--accent);">
+                        <img src="${img}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                `;
+            }
+
+            document.getElementById('modal-title').innerText = 'Edit Property';
+            modal.style.display = 'flex';
+        }
+
+        document.getElementById('property-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.innerText = 'Syncing...';
+            submitBtn.disabled = true;
+
+            const id = document.getElementById('prop-id').value;
+            const imageFiles = document.getElementById('prop-images-file').files;
+            const videoFile = document.getElementById('prop-video-file').files[0];
+
+            let finalImages = [];
+            let finalVideo = '';
+
+            // If editing and no new images, keep old ones
+            if (id && imageFiles.length === 0) {
+                const props = await fetchProperties();
+                const old = props.find(p => p.id === id);
+                finalImages = old.images;
+                finalVideo = old.video;
+            }
+
+            // Upload New Images to Supabase
+            if (imageFiles.length > 0) {
+                submitBtn.innerText = `Uploading ${imageFiles.length} images...`;
+                for (let i = 0; i < imageFiles.length; i++) {
+                    try {
+                        submitBtn.innerText = `Uploading image ${i + 1}/${imageFiles.length}...`;
+                        const url = await uploadToSupabase(imageFiles[i]);
+                        if (url) {
+                            finalImages.push(url);
+                            console.log(`✅ Image ${i + 1} uploaded:`, url);
+                        } else {
+                            alert(`⚠️ Image ${i + 1} upload returned no URL. Check Supabase Storage bucket exists.`);
+                        }
+                    } catch (err) {
+                        console.error('❌ Image upload failed:', err);
+                        alert(`❌ Image ${i + 1} upload failed: ${err.message}\n\nCheck:\n1. Storage bucket 'media' exists\n2. File size < 50MB\n3. Internet connection`);
+                    }
+                }
+            }
+
+            // Upload New Video to Supabase
+            if (videoFile) {
+                try {
+                    submitBtn.innerText = 'Uploading video...';
+                    const url = await uploadToSupabase(videoFile);
+                    if (url) {
+                        finalVideo = url;
+                        console.log('✅ Video uploaded:', url);
+                    } else {
+                        alert('⚠️ Video upload returned no URL. Check Supabase Storage bucket exists.');
+                    }
+                } catch (err) {
+                    console.error('❌ Video upload failed:', err);
+                    alert(`❌ Video upload failed: ${err.message}\n\nCheck:\n1. Storage bucket 'media' exists\n2. File size < 50MB\n3. Internet connection`);
+                }
+            }
+
+            const propertyData = {
+                id: id || Date.now().toString(),
+                title: document.getElementById('prop-title').value,
+                location: document.getElementById('prop-location').value,
+                type: document.getElementById('prop-type').value,
+                status: document.getElementById('prop-status').value,
+                price: parseInt(document.getElementById('prop-price').value),
+                area: parseInt(document.getElementById('prop-area').value),
+                bedrooms: parseInt(document.getElementById('prop-bedrooms').value) || 0,
+                bathrooms: parseInt(document.getElementById('prop-bathrooms').value) || 0,
+                description: document.getElementById('prop-desc').value,
+                images: finalImages.length > 0 ? finalImages : ['https://via.placeholder.com/600x400'],
+                video: finalVideo,
+                amenities: document.getElementById('prop-amenities').value.split(',').map(a => a.trim()).filter(a => a),
+                featured: true,
+                slug: document.getElementById('prop-title').value.toLowerCase().split(' ').join('-').replace(/[^\w-]/g, ''),
+                created_at: new Date().toISOString()
+            };
+
+            try {
+                submitBtn.innerText = 'Saving to database...';
+                await syncProperty(propertyData);
+
+                // Success message with details
+                const imageCount = finalImages.length;
+                const hasVideo = finalVideo ? 'Yes' : 'No';
+                alert(`✅ Property saved successfully!\n\n📸 Images: ${imageCount}\n🎥 Video: ${hasVideo}\n\nThe property will appear on your website immediately.`);
+
+                closeModal();
+                await renderAdminList();
+            } catch (err) {
+                console.error('❌ Save failed:', err);
+                alert(`❌ Failed to save property: ${err.message}\n\nPlease check:\n1. Internet connection\n2. Supabase database table exists\n3. Browser console (F12) for details`);
+            } finally {
+                submitBtn.innerText = 'Save Property';
+                submitBtn.disabled = false;
+            }
+        });
+
+        function toggleSidebar() {
+            document.querySelector('.admin-sidebar').classList.toggle('active');
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            const sidebar = document.querySelector('.admin-sidebar');
+            const mobileBtn = document.querySelector('.mobile-header button');
+            if (window.innerWidth <= 1024 &&
+                !sidebar.contains(e.target) &&
+                mobileBtn && !mobileBtn.contains(e.target) &&
+                sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+
+</html>
