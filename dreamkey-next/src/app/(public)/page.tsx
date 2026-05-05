@@ -32,8 +32,9 @@ export default async function Home() {
 
             <div className="d-flex gap-3 flex-wrap mt-4">
               <Link href="/listings" className="btn btn-primary px-4 py-3">View Properties</Link>
-              <a href="https://wa.me/1234567890" target="_blank" rel="noreferrer" className="btn btn-outline-primary px-4 py-3">
-                <i className="fab fa-whatsapp me-2"></i> Contact via WhatsApp
+              <a href="https://wa.me/1234567890" target="_blank" rel="noreferrer" className="btn btn-outline-primary px-4 py-3 d-inline-flex align-items-center">
+                <img src="/whatsapp.svg" alt="WhatsApp" style={{ width: '24px', height: '24px', marginRight: '10px' }} />
+                Contact via WhatsApp
               </a>
             </div>
           </div>
@@ -118,8 +119,8 @@ export default async function Home() {
       </section>
 
       {/* Floating WhatsApp */}
-      <a href="https://wa.me/1234567890" className="whatsapp-float d-flex align-items-center justify-content-center" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-        📱
+      <a href="https://wa.me/1234567890" className="whatsapp-float" target="_blank" rel="noopener noreferrer">
+        <img src="/whatsapp.svg" alt="Contact us on WhatsApp" />
       </a>
     </>
   );

@@ -8,9 +8,16 @@ export const metadata = {
 export default function AboutPage() {
   return (
     <>
-      <header className="text-center" style={{ backgroundColor: 'var(--primary)', color: 'white', paddingTop: '180px', paddingBottom: '100px' }}>
+      <header className="text-center" style={{ 
+        background: `linear-gradient(rgba(15, 15, 15, 0.8), rgba(15, 15, 15, 0.8)), url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        color: 'white', 
+        paddingTop: '180px', 
+        paddingBottom: '100px' 
+      }}>
         <Container>
-          <span className="section-tag" style={{ color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '3px', fontSize: '0.85rem', display: 'block', marginBottom: '1rem' }}>
+          <span className="section-tag" style={{ color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '3px', fontSize: '0.85rem', display: 'block', marginBottom: '1rem' }}>
             Established 2005
           </span>
           <h1 className="display-3" style={{ fontWeight: 800, fontFamily: 'var(--font-heading)' }}>
@@ -24,7 +31,7 @@ export default function AboutPage() {
           <Row className="align-items-center gy-5">
             <Col lg={6}>
               <div style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-lg)' }}>
-                <img src="/assets/about-2.png" alt="Luxury Villa Sketch" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80" alt="Luxury Villa Interior" style={{ width: '100%', height: 'auto', display: 'block' }} />
               </div>
             </Col>
             <Col lg={6} className="ps-lg-5">

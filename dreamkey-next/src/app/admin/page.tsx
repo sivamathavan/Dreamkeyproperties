@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Container, Row, Col, Form, Button, Modal, Table } from 'react-bootstrap';
 import { adminSignIn, adminSignOut, getAdminUser, fetchProperties, syncProperty, removeProperty, uploadToSupabase, Property } from '@/lib/api';
 
@@ -160,28 +161,32 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ background: 'var(--bg-main)', minHeight: '100vh', display: 'flex' }}>
-      {/* Sidebar */}
       <div style={{ 
         width: '280px', background: 'var(--bg-card)', height: '100vh', position: 'fixed', padding: '2rem', 
-        borderRight: '1px solid var(--border-color)', zIndex: 100,
-        left: sidebarOpen ? '0' : undefined, transition: '0.3s ease'
+        borderRight: '1px solid var(--border-color)', zIndex: 1000,
+        left: sidebarOpen ? '0' : undefined, transition: '0.3s ease',
+        boxShadow: sidebarOpen ? '10px 0 30px rgba(0,0,0,0.5)' : 'none'
       }} className={`d-none d-lg-block ${sidebarOpen ? 'd-block position-fixed' : ''}`}>
-        <div className="d-flex align-items-center gap-2 mb-5" style={{ fontSize: '1.2rem', fontFamily: 'var(--font-heading)', fontWeight: 600 }}>
-          DreamKey<span style={{ color: 'var(--accent)' }}>Admin</span>
+        <div className="d-flex justify-content-between align-items-center mb-5">
+          <div className="d-flex align-items-center gap-2" style={{ fontSize: '1.2rem', fontFamily: 'var(--font-heading)', fontWeight: 600 }}>
+            DreamKey<span style={{ color: 'var(--accent)' }}>Admin</span>
+          </div>
+          <Button variant="link" className="d-lg-none text-white p-0" onClick={() => setSidebarOpen(false)}>✕</Button>
         </div>
         <div className="p-3 mb-2 rounded" style={{ background: 'var(--accent)', color: '#000', fontWeight: 600, cursor: 'pointer' }}>
           <span className="me-2">📋</span> Listings
         </div>
-        <div className="p-3 mb-2 rounded text-muted hover-accent" style={{ cursor: 'pointer' }} onClick={() => window.location.href = '/'}>
+        <Link href="/" className="p-3 mb-2 rounded text-muted hover-accent d-block text-decoration-none" style={{ cursor: 'pointer' }}>
           <span className="me-2">🌐</span> Public Site
-        </div>
-        <div className="p-3 mt-auto rounded text-danger" style={{ cursor: 'pointer', position: 'absolute', bottom: '2rem' }} onClick={handleLogout}>
+        </Link>
+        <div className="p-3 mt-auto rounded text-danger" style={{ cursor: 'pointer', position: 'absolute', bottom: '2rem', width: 'calc(100% - 4rem)' }} onClick={handleLogout}>
           <span className="me-2">🚪</span> Sign Out
         </div>
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, marginLeft: sidebarOpen ? '0' : '280px', padding: '4rem' }} className="admin-main-responsive">
+      <div style={{ flex: 1, marginLeft: sidebarOpen ? '0' : '280px', transition: '0.3s ease' }} className="admin-main-responsive">
+        <div style={{ padding: '2rem' }} className="admin-content-inner">
         <div className="d-lg-none d-flex justify-content-between align-items-center mb-4 p-3 rounded" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
           <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 600 }}>DreamKey Admin</div>
           <Button variant="outline-primary" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</Button>
@@ -221,6 +226,7 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+      </div>
 
       {/* Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered contentClassName="bg-dark text-white border-secondary">
@@ -228,24 +234,24 @@ export default function AdminDashboard() {
           <Modal.Title style={{ fontFamily: 'var(--font-heading)' }}>{editingId ? 'Edit Property' : 'Add Property'}</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSave}>
-          <Modal.Body>
+          <Modal.Body className="p-4">
             <Row className="g-3">
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="text-muted small text-uppercase">Title</Form.Label>
-                  <Form.Control type="text" required value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="bg-dark text-white border-secondary" />
+                  <Form.Control type="text" required value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="bg-dark text-white border-secondary p-2" />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="text-muted small text-uppercase">Location</Form.Label>
-                  <Form.Control type="text" required value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} className="bg-dark text-white border-secondary" />
+                  <Form.Control type="text" required value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} className="bg-dark text-white border-secondary p-2" />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="text-muted small text-uppercase">Type</Form.Label>
-                  <Form.Select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="bg-dark text-white border-secondary">
+                  <Form.Select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })} className="bg-dark text-white border-secondary p-2">
                     <option>House</option><option>Flat</option><option>Land</option>
                   </Form.Select>
                 </Form.Group>
@@ -253,7 +259,7 @@ export default function AdminDashboard() {
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="text-muted small text-uppercase">Status</Form.Label>
-                  <Form.Select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })} className="bg-dark text-white border-secondary">
+                  <Form.Select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })} className="bg-dark text-white border-secondary p-2">
                     <option>Available</option><option>Sold</option><option>UnderConstruction</option>
                   </Form.Select>
                 </Form.Group>
@@ -261,37 +267,37 @@ export default function AdminDashboard() {
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="text-muted small text-uppercase">Price (₹)</Form.Label>
-                  <Form.Control type="number" required value={formData.price} onChange={e => setFormData({ ...formData, price: Number(e.target.value) })} className="bg-dark text-white border-secondary" />
+                  <Form.Control type="number" required value={formData.price} onChange={e => setFormData({ ...formData, price: Number(e.target.value) })} className="bg-dark text-white border-secondary p-2" />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="text-muted small text-uppercase">Area (sqft)</Form.Label>
-                  <Form.Control type="number" required value={formData.area} onChange={e => setFormData({ ...formData, area: Number(e.target.value) })} className="bg-dark text-white border-secondary" />
+                  <Form.Control type="number" required value={formData.area} onChange={e => setFormData({ ...formData, area: Number(e.target.value) })} className="bg-dark text-white border-secondary p-2" />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="text-muted small text-uppercase">Bedrooms</Form.Label>
-                  <Form.Control type="number" value={formData.bedrooms} onChange={e => setFormData({ ...formData, bedrooms: Number(e.target.value) })} className="bg-dark text-white border-secondary" />
+                  <Form.Control type="number" value={formData.bedrooms} onChange={e => setFormData({ ...formData, bedrooms: Number(e.target.value) })} className="bg-dark text-white border-secondary p-2" />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="text-muted small text-uppercase">Bathrooms</Form.Label>
-                  <Form.Control type="number" value={formData.bathrooms} onChange={e => setFormData({ ...formData, bathrooms: Number(e.target.value) })} className="bg-dark text-white border-secondary" />
+                  <Form.Control type="number" value={formData.bathrooms} onChange={e => setFormData({ ...formData, bathrooms: Number(e.target.value) })} className="bg-dark text-white border-secondary p-2" />
                 </Form.Group>
               </Col>
               <Col md={12}>
                 <Form.Group>
                   <Form.Label className="text-muted small text-uppercase">Amenities (Comma Separated)</Form.Label>
-                  <Form.Control type="text" value={formData.amenities?.join(', ')} onChange={e => setFormData({ ...formData, amenities: e.target.value.split(',').map(a => a.trim()).filter(a => a) })} className="bg-dark text-white border-secondary" placeholder="Pool, Gym, Parking" />
+                  <Form.Control type="text" value={formData.amenities?.join(', ')} onChange={e => setFormData({ ...formData, amenities: e.target.value.split(',').map(a => a.trim()).filter(a => a) })} className="bg-dark text-white border-secondary p-2" placeholder="Pool, Gym, Parking" />
                 </Form.Group>
               </Col>
               <Col md={12}>
                 <Form.Group>
                   <Form.Label className="text-muted small text-uppercase">Description</Form.Label>
-                  <Form.Control as="textarea" rows={3} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="bg-dark text-white border-secondary" />
+                  <Form.Control as="textarea" rows={3} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="bg-dark text-white border-secondary p-2" />
                 </Form.Group>
               </Col>
               <Col md={12}>
@@ -314,7 +320,7 @@ export default function AdminDashboard() {
               </Col>
             </Row>
           </Modal.Body>
-          <Modal.Footer className="border-secondary">
+          <Modal.Footer className="border-secondary p-3">
             <Button variant="outline-light" onClick={() => setShowModal(false)}>Cancel</Button>
             <Button variant="primary" type="submit" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Property'}</Button>
           </Modal.Footer>
@@ -325,6 +331,9 @@ export default function AdminDashboard() {
         @media (max-width: 991px) {
           .admin-main-responsive {
             margin-left: 0 !important;
+          }
+          .admin-content-inner {
+            padding: 1.5rem !important;
           }
         }
       `}</style>
